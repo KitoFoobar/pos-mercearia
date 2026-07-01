@@ -28,20 +28,19 @@ class DashboardController extends Controller
         $lowStock = $lowStockQuery->count();
         $lowStockProducts = $lowStockQuery->get();
 
-        // 🧾 ÚLTIMAS VENDAS (COM ITENS + PRODUTOS)
+        // 🧾 ÚLTIMAS VENDAS
         $latestSales = Sale::with('items.product')
             ->latest()
             ->take(5)
             ->get();
 
-        // 📊 VENDAS DA SEMANA
+        // 📊 VENDAS SEMANA
         $salesThisWeek = Sale::whereBetween('created_at', [
-                Carbon::now()->startOfWeek(),
-                Carbon::now()->endOfWeek()
-            ])
-            ->sum('total');
+            Carbon::now()->startOfWeek(),
+            Carbon::now()->endOfWeek()
+        ])->sum('total');
 
-        // 📊 VENDAS DO MÊS
+        // 📊 VENDAS MÊS
         $salesThisMonth = Sale::whereMonth('created_at', Carbon::now()->month)
             ->sum('total');
 
@@ -53,6 +52,13 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
+        // 📈 GRÁFICO DE VENDAS (ÚLTIMOS 7 DIAS)
+        $salesChart = Sale::selectRaw('DATE(created_at) as date, SUM(total) as total')
+            ->where('created_at', '>=', Carbon::now()->subDays(7))
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
         return view('dashboard', compact(
             'salesToday',
             'salesThisWeek',
@@ -61,7 +67,8 @@ class DashboardController extends Controller
             'lowStock',
             'lowStockProducts',
             'latestSales',
-            'topProducts'
+            'topProducts',
+            'salesChart'
         ));
     }
 }

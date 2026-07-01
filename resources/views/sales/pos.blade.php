@@ -202,110 +202,79 @@ function checkout() {
     }
 
     let btn = document.querySelector('button[onclick="checkout()"]');
+
     btn.disabled = true;
     btn.innerText = "A processar...";
 
-    let cash = parseFloat(document.getElementById('cash').value || 0);
-    let total = cart.reduce((s,i)=> s + i.price*i.qty,0);
-    let change = cash - total;
+    let cash = parseFloat(
+        document.getElementById('cash').value || 0
+    );
+
+    let total = cart.reduce(
+        (s, i) => s + i.price * i.qty,
+        0
+    );
 
     fetch("{{ route('pos.checkout') }}", {
+
         method: "POST",
+
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': '{{ csrf_token() }}'
         },
+
         body: JSON.stringify({
             cart: cart,
             total: total,
             cash: cash
         })
+
     })
+
     .then(res => res.json())
+
     .then(data => {
 
-        /* 🔴 BLOQUEIO DE ERRO DO BACKEND */
         if (data.error) {
+
             alert(data.error);
+
             btn.disabled = false;
             btn.innerText = "💳 FINALIZAR VENDA";
+
             return;
         }
 
-        openReceipt(cash, total, change);
+        window.open(
+    "{{ url('/sale') }}/" + data.sale_id + "/receipt",
+    "_blank"
+);
 
         alert(data.message);
 
         cart = [];
+
         document.getElementById('cash').value = '';
+
         render();
 
         btn.disabled = false;
         btn.innerText = "💳 FINALIZAR VENDA";
 
         location.reload();
+
     })
+
     .catch(() => {
+
         alert("Erro ao processar venda");
+
         btn.disabled = false;
         btn.innerText = "💳 FINALIZAR VENDA";
-    });
-}
 
-/* ================= RECIBO ================= */
-function openReceipt(cash, total, change) {
-
-    let win = window.open('', '_blank', 'width=420,height=650');
-
-    let rows = '';
-
-    cart.forEach(item => {
-        rows += `
-            <tr>
-                <td>${item.name}</td>
-                <td style="text-align:center">${item.qty}</td>
-                <td style="text-align:right">${item.price * item.qty} MZN</td>
-            </tr>
-        `;
     });
 
-    win.document.write(`
-        <html>
-        <head>
-            <title>Recibo</title>
-            <style>
-                body { font-family: Arial; padding: 15px; }
-                h2 { text-align:center; }
-                table { width:100%; border-collapse: collapse; }
-                th, td { border-bottom:1px dashed #ccc; padding:5px; font-size:13px; }
-                .total { font-weight:bold; margin-top:10px; }
-                button { width:100%; padding:10px; margin-top:15px; background:green; color:#fff; border:none; }
-            </style>
-        </head>
-        <body>
-
-            <h2>🛒 MINHA LOJA</h2>
-
-            <table>
-                <tr>
-                    <th>Produto</th>
-                    <th>Qtd</th>
-                    <th>Total</th>
-                </tr>
-                ${rows}
-            </table>
-
-            <div class="total">TOTAL: ${total} MZN</div>
-            <div class="total">RECEBIDO: ${cash} MZN</div>
-            <div class="total">TROCO: ${change >= 0 ? change : 0} MZN</div>
-
-            <button onclick="window.print()">🖨 Imprimir</button>
-
-        </body>
-        </html>
-    `);
-
-    win.document.close();
 }
 
 /* ================= PESQUISA ================= */

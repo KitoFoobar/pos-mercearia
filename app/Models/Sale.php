@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class Sale extends Model
 {
     protected $fillable = [
-        'total'
+        'total',
+        'received',
+        'change'
     ];
 
     /**
@@ -19,18 +21,17 @@ class Sale extends Model
     }
 
     /**
-     * 🔗 Acesso direto aos produtos através dos itens da venda
-     * (relação indireta: Sale -> SaleItem -> Product)
+     * 🔗 acesso indireto a produtos
      */
     public function products()
     {
         return $this->hasManyThrough(
             Product::class,
             SaleItem::class,
-            'sale_id',     // FK em sale_items
-            'id',          // PK em products
-            'id',          // PK em sales
-            'product_id'   // FK em sale_items
+            'sale_id',
+            'id',
+            'id',
+            'product_id'
         );
     }
 }
